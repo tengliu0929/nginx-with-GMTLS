@@ -100,5 +100,10 @@
 四、编译  
 需要提前下载铜锁开源项目源码，然后进入nginx的目录,然后根据所需来配置编译选项，以下只是一个示例  
 ./configure --with-debug --prefix=/opt/nginx --with-stream --with-stream_ssl_module --with-http_ssl_module --with-openssl=${OPENSSL_SRC} --with-openssl-opt="enable-ntls"  
-五、测试
-  
+五、测试  
+主代码中的client.c和server.c可以用来测试铜锁开源项目的国密功能，至于证书，请参考铜锁说明文档，地址如下：  
+https://www.yuque.com/tsdoc/ts/sulazb  
+六、鸣谢  
+多谢https://github.com/wa5i 的答疑解惑  
+七、如果您有疑问哪一块有问题，请及时联系我，联系方式如下  
+liuteng09029@gmail.com 或 liuteng0929@163.com
