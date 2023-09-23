@@ -1,0 +1,141 @@
+
+#user  nobody;
+worker_processes  1;
+
+#error_log  logs/error.log;
+error_log  logs/error.log  debug;
+#error_log  logs/error.log  info;
+
+#pid        logs/nginx.pid;
+
+
+events {
+    worker_connections  1024;
+}
+
+env GMSSL=on;
+
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+
+    #log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+    #                  '$status $body_bytes_sent "$http_referer" '
+    #                  '"$http_user_agent" "$http_x_forwarded_for"';
+
+    #access_log  logs/access.log  main;
+    sendfile        on;
+    #tcp_nopush     on;
+
+    #keepalive_timeout  0;
+    keepalive_timeout  65;
+
+    #gzip  on;
+
+    server {
+        listen       8080;
+        server_name  localhost;
+
+        #charset koi8-r;
+
+        #access_log  logs/host.access.log  main;
+
+        location / {
+		proxy_gmssl_enable on;
+                proxy_http_version 1.1;
+		proxy_pass https://127.0.0.1:443;
+                proxy_ssl_trusted_certificate /home/certs/chain-ca.crt;
+                proxy_gmssl_sign_certificate /home/certs/client_sign.crt;
+                proxy_gmssl_sign_key /home/certs/client_sign.key;
+                proxy_gmssl_enc_certificate /home/certs/client_enc.crt;
+                proxy_gmssl_enc_key /home/certs/client_enc.key;
+                proxy_ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
+        }
+
+        #error_page  404              /404.html;
+
+        # redirect server error pages to the static page /50x.html
+        #
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   html;
+        }
+
+        # proxy the PHP scripts to Apache listening on 127.0.0.1:80
+        #
+        #location ~ \.php$ {
+        #    proxy_pass   http://127.0.0.1;
+        #}
+
+        # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
+        #
+        #location ~ \.php$ {
+        #    root           html;
+        #    fastcgi_pass   127.0.0.1:9000;
+        #    fastcgi_index  index.php;
+        #    fastcgi_param  SCRIPT_FILENAME  /scripts$fastcgi_script_name;
+        #    include        fastcgi_params;
+        #}
+
+        # deny access to .htaccess files, if Apache's document root
+        # concurs with nginx's one
+        #
+        #location ~ /\.ht {
+        #    deny  all;
+        #}
+    }
+
+   server {
+         listen 8443 ssl;
+         gmssl on;
+         
+         ssl_sign_certificate /mnt/hgfs/code/test/src/tongsuo/certs/server_sign.crt;
+         ssl_sign_certificate_key        /mnt/hgfs/code/test/src/tongsuo/certs/server_sign.key;
+         ssl_enc_certificate /mnt/hgfs/code/test/src/tongsuo/certs/server_enc.crt;
+	 ssl_enc_certificate_key	      /mnt/hgfs/code/test/src/tongsuo/certs/server_enc.key;
+         ssl_client_certificate /mnt/hgfs/code/test/src/tongsuo/certs/chain-ca.crt;
+         ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3 GMSSL;
+         
+         # 确保下面配置中有这两个套件即可
+         ssl_ciphers ECC-SM2-WITH-SM4-SM3:ECC_SM4_SM3:ECC-SM2-SM4-CBC-SM3:ECDHE-SM2-WITH-SM4-SM3:ECDHE-SM2-SM4-GCM-SM3;
+
+	location / {
+           root html;
+           index index.html index.htm;
+         }
+         
+        location = /50x.html {
+	   root html;
+	}
+
+                 
+   }
+}  
+stream {
+   server {
+   listen 9443 ssl;
+   gmssl_enable on;
+   gmssl_sign_certificate /home/certs/server_sign.crt;
+   gmssl_sign_key /home/certs/server_sign.key;
+   gmssl_enc_certificate /home/certs/server_enc.crt;
+   gmssl_enc_key /home/certs/server_enc.key;
+   ssl_client_certificate /home/certs/chain-ca.crt;
+   
+   ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3 GMSSL;
+   ssl_ciphers ECC-SM2-WITH-SM4-SM3:ECC_SM4_SM3:ECC-SM2-SM4-CBC-SM3:ECDHE-SM2-WITH-SM4-SM3:ECDHE-SM2-SM4-GCM-SM3;
+   proxy_pass 127.0.0.1:80;
+  }
+  
+  server {
+      listen 1080;
+      proxy_ssl on;
+      proxy_gmssl_enable on;
+      proxy_sign_certificate /home/certs/client_sign.crt;
+      proxy_sign_key /home/certs/client_sign.key;
+      proxy_enc_certificate /home/certs/client_enc.crt;
+      proxy_enc_key /home/certs/client_enc.key;
+      proxy_ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
+      proxy_ssl_ciphers ECC-SM2-WITH-SM4-SM3:ECC_SM4_SM3:ECC-SM2-SM4-CBC-SM3:ECDHE-SM2-WITH-SM4-SM3:ECDHE-SM2-SM4-GCM-SM3;
+      proxy_pass 127.0.0.1:443;
+  }
+}
